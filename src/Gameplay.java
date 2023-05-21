@@ -8,22 +8,30 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.Timer;
 
-public class Gameplay  extends JPanel implements ActionListener 
+public class Gameplay extends JPanel implements ActionListener 
 {
 	private brick br;
 	
 	private ImageIcon player1;	
+
+	//Gán vị trí ban đầu của người chơi 1
 	private int player1X = 200;
 	private int player1Y = 550;	
+
+	//4 biến dưới đây lưu hướng của người chơi 1,ban đầu,hình ảnh xe tăng là hướng lên,nên để biến up là true
 	private boolean player1right = false;
 	private boolean player1left = false;
 	private boolean player1down = false;
 	private boolean player1up = true;	
+
+	//Điểm,máu (máu max = 5),trạng thái người 1 có đang bắn hay không,và hướng đạn bắn của người 1
 	private int player1score = 0;
 	private int player1lives = 5;
 	private boolean player1Shoot = false;
 	private String bulletShootDir1 = "";
 	
+	//Khai báo các biến trạng thái liên quan đến người 2
+	// Tương tự như các biến trên của người 1
 	private ImageIcon player2;	
 	private int player2X = 400;
 	private int player2Y = 550;	
@@ -36,50 +44,63 @@ public class Gameplay  extends JPanel implements ActionListener
 	private boolean player2Shoot = false;
 	private String bulletShootDir2 = "";
 	
+	//Anh em nhớ giá trị delay này là 8,tí nữa sẽ có hàm để
+	//refresh lại hình ảnh trên JFrame sau mỗi chu kỳ là 8ms
+	//Anh em chỉnh 8 thành 800,8000 để thấy đạn bay bị chậm đi,người di chuyển chậm đi... nhé
 	private Timer timer;
 	private int delay=8;
 	
+	//Hai biến này tí nữa sẽ dùng để lắng nghe sự kiện khi thao tác với người 1 và người 2
+	//Hai class Player1Listener và Player2Listener được viết ở dưới
 	private Player1Listener player1Listener;
 	private Player2Listener player2Listener;
 	
 	private Player1Bullet player1Bullet = null;
 	private Player2Bullet player2Bullet = null;
 	
+	//Trạng thái chơi,tức là trạng thái chương trình,ban đầu khi bật lên nó luôn là true,nghĩa là game đang bật
 	private boolean play = true;
 	
+	//Constructor,tí nữa add Gameplay vào JFrame,thì JFrame bật lên một phát sẽ thực hiện mấy cái sau luôn
 	public Gameplay()
-	{				
+	{	
+		//Nhét tường vào frame (đoạn này vẫn chưa hiện lên tường đâu,phải paint nó nữa)
 		br = new brick();
+
+		//Bắt đầu lắng nghe sự kiện
 		player1Listener = new Player1Listener();
 		player2Listener = new Player2Listener();
-		setFocusable(true);
+
+		setFocusable(true);//Phải có cái này thì JFrame đang hiện mới 
 		//addKeyListener(this);
 		addKeyListener(player1Listener);
 		addKeyListener(player2Listener);
 		setFocusTraversalKeysEnabled(false);
-        timer=new Timer(delay,this);
-		timer.start();
+        timer=new Timer(delay,this);//anh em hay nhớ this trỏ tới cái gọi tới nó,thì cái này nó cũng trỏ tới cái Frame mà dùng nó
+		timer.start();//bắt đầu lặp refresh lại JFrame sau mỗi 8ms nhé
 	}
 	
+	//Đoạn này vẽ tất cả mọi thứ hiện ra trước mắt người nhìn,anh em vào main chạy project để nó
+	//hiện cái frame chính lên cho dễ hiểu nhá
 	public void paint(Graphics g)
 	{    		
-		// play background
+		//Vẽ phần chơi game
 		g.setColor(Color.black);
 		g.fillRect(0, 0, 650, 600);
 		
-		// right side background
+		//Vẽ phần bảng điểm bên tay phải
 		g.setColor(Color.DARK_GRAY);
 		g.fillRect(660, 0, 140, 600);
 		
-		// draw solid bricks
+		//Vẽ gạch cứng
 		br.drawSolids(this, g);
 		
-		// draw Breakable bricks	
+		//Vẽ gạch mềm
 		br.draw(this, g);
 		
 		if(play)
 		{
-			// draw player 1
+			//Vẽ người chơi thứ nhất,nếu hướng nào đang được set là true thì hiện ảnh hưởng đó =))
 			if(player1up)
 				player1=new ImageIcon("player1_tank_up.png");	
 			else if(player1down)
@@ -91,7 +112,7 @@ public class Gameplay  extends JPanel implements ActionListener
 				
 			player1.paintIcon(this, g, player1X, player1Y);
 			
-			// draw player 2
+			// Vẽ người chơi thứ 2
 			if(player2up)
 				player2=new ImageIcon("player2_tank_up.png");	
 			else if(player2down)
@@ -103,8 +124,11 @@ public class Gameplay  extends JPanel implements ActionListener
 						
 			player2.paintIcon(this, g, player2X, player2Y);
 			
+			//Xử lý nếu trạng thái người 1 bắn là true
 			if(player1Bullet != null && player1Shoot)
 			{
+				//Nếu hướng của đạn đang là rỗng,thì set cho hướng của đạn chính
+				//bằng hướng của xe tăng ngay lúc đó
 				if(bulletShootDir1.equals(""))
 				{
 					if(player1up)
@@ -124,16 +148,21 @@ public class Gameplay  extends JPanel implements ActionListener
 						bulletShootDir1 = "left";
 					}
 				}
+				//Nếu hướng của đạn đã được xác định,dùng hàm move (được xây dựng trong lớp Player1Bullet) để tịnh tiến 
+				//đường đạn và draw để vẽ lại đường đạn sau khi tịnh tiến
 				else
 				{
 					player1Bullet.move(bulletShootDir1);
 					player1Bullet.draw(g);
 				}
 				
-				
+				//Cái này để xử lý khi phát hiện người chơi 2 có trúng đạn của người chơi 1 không
+				//nhìn rối vậy thôi những rất dễ hiểu,chỉ là tạo ra hai hình chữ nhật tương đương
+				//vị trí của đạn và người chơi 2 rồi xem chúng là đang chạm vào nhau không
 				if(new Rectangle(player1Bullet.getX(), player1Bullet.getY(), 10, 10)
 				.intersects(new Rectangle(player2X, player2Y, 50, 50)))
 				{
+					//Nếu chúng đạn thì tăng điểm người 1,trừ mạng người 2,hủy luôn viên đạn người 1...
 					player1score += 10;
 					player2lives -= 1;
 					player1Bullet = null;
@@ -141,14 +170,17 @@ public class Gameplay  extends JPanel implements ActionListener
 					bulletShootDir1 = "";
 				}
 				
+				//Đã đến lúc dùng hàm checkCollision để kiểm tra đạn dính tường hay không
 				if(br.checkCollision(player1Bullet.getX(), player1Bullet.getY())
 						|| br.checkSolidCollision(player1Bullet.getX(), player1Bullet.getY()))
 				{
+					//nếu đạn dính tường,hủy bỏ viên đạn
 					player1Bullet = null;
 					player1Shoot = false;
 					bulletShootDir1 = "";				
 				}
 	
+				//Cái này để xem nếu viên đạn đi ra ngoài phạm vi Frame,thì hủy bỏ đường đạn
 				if(player1Bullet.getY() < 1 
 						|| player1Bullet.getY() > 580
 						|| player1Bullet.getX() < 1
@@ -160,6 +192,7 @@ public class Gameplay  extends JPanel implements ActionListener
 				}
 			}
 			
+			//Từ đây xuống dòng 251 là xử lý các trường hợp với đường đạn của người 2,tương đương xử lý cới đường đạn người 1 ở trên
 			if(player2Bullet != null && player2Shoot)
 			{
 				if(bulletShootDir2.equals(""))
@@ -219,7 +252,7 @@ public class Gameplay  extends JPanel implements ActionListener
 		}
 	
 		
-		// the scores 		
+		//Tạo phần thông số ở bên tay phải		
 		g.setColor(Color.white);
 		g.setFont(new Font("serif",Font.BOLD, 15));
 		g.drawString("Scores", 700,30);
@@ -230,6 +263,7 @@ public class Gameplay  extends JPanel implements ActionListener
 		g.drawString("Player 1:  "+player1lives, 670,180);
 		g.drawString("Player 2:  "+player2lives, 670,210);
 		
+		//Xử lý nếu mạng của người 1 hoặc người 2 chỉ còn 0 (chết)
 		if(player1lives == 0)
 		{
 			g.setColor(Color.white);
@@ -262,7 +296,7 @@ public class Gameplay  extends JPanel implements ActionListener
 	
 		repaint();
 	}
-
+	//Đoạn này bắt đầu là class dùng để khai thác sự kiện trên bàn phím,toàn dùng if else,khá dễ hiểu nhá
 	private class Player1Listener implements KeyListener
 	{
 		public void keyTyped(KeyEvent e) {}
